@@ -13,6 +13,7 @@ IMAGE_WIDTH = 800
 IMAGE_HEIGHT = 600
 WALL_THRESHOLD = 50
 CUSTOMER_RADIUS = 8
+WALL_SAMPLE_RATE = 5  # Same as in app.py
 
 class CustomerState(Enum):
     ENTERING = "entering"
@@ -41,15 +42,14 @@ def test_simulator():
     # Test wall creation from black pixels
     gray_image = np.mean(image_array, axis=2)
     wall_body = space.static_body
-    sample_rate = 10
     wall_count = 0
     
-    for y in range(0, IMAGE_HEIGHT, sample_rate):
-        for x in range(0, IMAGE_WIDTH, sample_rate):
+    for y in range(0, IMAGE_HEIGHT, WALL_SAMPLE_RATE):
+        for x in range(0, IMAGE_WIDTH, WALL_SAMPLE_RATE):
             if gray_image[y, x] < WALL_THRESHOLD:
                 wall_shape = pymunk.Poly.create_box(
                     wall_body,
-                    (sample_rate, sample_rate),
+                    (WALL_SAMPLE_RATE, WALL_SAMPLE_RATE),
                     radius=0
                 )
                 wall_shape.body.position = (x, y)

@@ -17,6 +17,7 @@ IMAGE_WIDTH = 800
 IMAGE_HEIGHT = 600
 WALL_THRESHOLD = 50  # Pixels darker than this are considered walls
 CUSTOMER_RADIUS = 8
+WALL_SAMPLE_RATE = 5  # Sample rate for wall detection
 FPS = 30
 
 class CustomerState(Enum):
@@ -42,6 +43,7 @@ class Customer:
     state_timer: float
     shelf_targets: List[Tuple[float, float]]
     assigned_register: Optional[int]
+    register_service_time: float  # Store service time when entering register
     id: int
 
 class StoreSimulator:
@@ -101,15 +103,13 @@ class StoreSimulator:
         wall_body = self.space.static_body
         
         # Sample walls at intervals to avoid too many shapes
-        sample_rate = 5
-        
-        for y in range(0, self.height, sample_rate):
-            for x in range(0, self.width, sample_rate):
+        for y in range(0, self.height, WALL_SAMPLE_RATE):
+            for x in range(0, self.width, WALL_SAMPLE_RATE):
                 if gray_image[y, x] < WALL_THRESHOLD:
                     # Create a small square wall segment
                     wall_shape = pymunk.Poly.create_box(
                         wall_body,
-                        (sample_rate, sample_rate),
+                        (WALL_SAMPLE_RATE, WALL_SAMPLE_RATE),
                         radius=0
                     )
                     wall_shape.body.position = (x, y)
@@ -149,6 +149,7 @@ class StoreSimulator:
             state_timer=0,
             shelf_targets=shelf_targets,
             assigned_register=None,
+            register_service_time=0.0,
             id=self.customer_id_counter
         )
         
@@ -249,13 +250,14 @@ class StoreSimulator:
             if at_target:
                 customer.state = CustomerState.AT_REGISTER
                 customer.state_timer = 0
+                # Store service time when entering register state
+                customer.register_service_time = random.uniform(2.0, 5.0)
                 customer.body.velocity = (0, 0)
         
         elif customer.state == CustomerState.AT_REGISTER:
             customer.body.velocity = (0, 0)
-            # Random service time (2-5 seconds)
-            service_time = random.uniform(2.0, 5.0)
-            if customer.state_timer >= service_time:
+            # Use stored service time
+            if customer.state_timer >= customer.register_service_time:
                 customer.state = CustomerState.EXITING
                 if customer.assigned_register is not None:
                     self.register_queues[customer.assigned_register] -= 1
