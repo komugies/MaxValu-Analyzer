@@ -19,6 +19,7 @@ WALL_THRESHOLD = 50  # Pixels darker than this are considered walls
 CUSTOMER_RADIUS = 8
 WALL_SAMPLE_RATE = 5  # Sample rate for wall detection
 FPS = 30
+MAX_DELTA_TIME = 0.1  # Maximum time step to avoid physics instability (seconds)
 
 class CustomerState(Enum):
     ENTERING = "entering"
@@ -393,7 +394,7 @@ def main():
     if st.session_state.running:
         current_time = time.time()
         dt = (current_time - st.session_state.last_update) * sim_speed
-        dt = min(dt, 0.1)  # Cap dt to avoid instability
+        dt = min(dt, MAX_DELTA_TIME)  # Cap dt to avoid instability
         
         # Create new customers (spread over time)
         if st.session_state.customers_created < 100:
@@ -404,7 +405,7 @@ def main():
         
         # Update simulation
         if dt > 0:
-            st.session_state.simulator.update(dt / FPS * 30)  # Normalize to expected frame rate
+            st.session_state.simulator.update(dt)
             st.session_state.last_update = current_time
         
         # Render
