@@ -1,6 +1,5 @@
 import streamlit as st
 import pymunk
-import pymunk.pygame_util
 from PIL import Image
 import numpy as np
 import time
